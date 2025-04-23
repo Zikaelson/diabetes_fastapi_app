@@ -263,7 +263,7 @@ The form collects:
 - Sends to your deployed API
 - Displays real-time predictions with colorful feedback
 
-### 🌈 Example Output:
+###  Example Output:
 ```
 ✅ Low risk of diabetes
 OR
