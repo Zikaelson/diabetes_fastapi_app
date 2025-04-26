@@ -21,7 +21,7 @@ jobs:
         docker build -t zikaelson/fastapi-diabetes-backend:latest ./backend
         docker push zikaelson/fastapi-diabetes-backend:latest
 
-    - name: 🐳 Build and Push Frontend
+    - name: 🐳 Build and Push Frontends
       run: |
         docker build -t zikaelson/diabetes-streamlit-frontend:latest ./frontend
         docker push zikaelson/diabetes-streamlit-frontend:latest
