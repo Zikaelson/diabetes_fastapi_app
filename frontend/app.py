@@ -23,7 +23,7 @@ sex_val = 0 if sex == "Male" else 1
 # Prediction button
 if st.button("🔍 Predict"):
     with st.spinner("Sending data to the model..."):
-        url = "https:3.145.115.164:8000/predict"
+        url = "https://3.145.115.164:8000/predict"
         payload = {
             "age": age,
             "sex": sex_val,
