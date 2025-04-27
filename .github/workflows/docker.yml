@@ -1,4 +1,4 @@
-name: Build, Push, and Deploy to EC2
+name: Build, Push and Deploy to EC2
 
 on:
   push:
@@ -18,31 +18,31 @@ jobs:
 
     - name: 🐳 Build and Push Backend
       run: |
-        docker build -t zikaelson/fastapi-diabetes-backend:latest ./backend
-        docker push zikaelson/fastapi-diabetes-backend:latest
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/fastapi-diabetes-backend:latest ./backend
+        docker push ${{ secrets.DOCKER_USERNAME }}/fastapi-diabetes-backend:latest
 
     - name: 🐳 Build and Push Frontend
       run: |
-        docker build -t zikaelson/diabetes-streamlit-frontend:latest ./frontend
-        docker push zikaelson/diabetes-streamlit-frontend:latest
+        docker build -t ${{ secrets.DOCKER_USERNAME }}/diabetes-streamlit-frontend:latest ./frontend
+        docker push ${{ secrets.DOCKER_USERNAME }}/diabetes-streamlit-frontend:latest
 
-    - name: 📄 Create PEM File
+    - name: 📄 Create PEM file
       run: |
         echo "${{ secrets.EC2_PRIVATE_KEY }}" > my-key.pem
         chmod 400 my-key.pem
 
     - name: 📡 Connect to EC2 and Deploy
       run: |
-        ssh -o StrictHostKeyChecking=no -i my-key.pem ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
-          docker pull zikaelson/fastapi-diabetes-backend:latest
-          docker pull zikaelson/diabetes-streamlit-frontend:latest
-
-          docker stop $(docker ps -q --filter ancestor=zikaelson/fastapi-diabetes-backend:latest) || true
-          docker stop $(docker ps -q --filter ancestor=zikaelson/diabetes-streamlit-frontend:latest) || true
-
-          docker rm $(docker ps -aq --filter ancestor=zikaelson/fastapi-diabetes-backend:latest) || true
-          docker rm $(docker ps -aq --filter ancestor=zikaelson/diabetes-streamlit-frontend:latest) || true
-
-          docker run -d -p 8000:8000 zikaelson/fastapi-diabetes-backend:latest
-          docker run -d -p 8501:8501 zikaelson/diabetes-streamlit-frontend:latest
+        ssh -o StrictHostKeyChecking=no -i my-key.pem ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
+          docker pull ${{ secrets.DOCKER_USERNAME }}/fastapi-diabetes-backend:latest
+          docker pull ${{ secrets.DOCKER_USERNAME }}/diabetes-streamlit-frontend:latest
+          
+          docker stop $(docker ps -q --filter ancestor=${{ secrets.DOCKER_USERNAME }}/fastapi-diabetes-backend:latest) || true
+          docker stop $(docker ps -q --filter ancestor=${{ secrets.DOCKER_USERNAME }}/diabetes-streamlit-frontend:latest) || true
+          
+          docker rm $(docker ps -aq --filter ancestor=${{ secrets.DOCKER_USERNAME }}/fastapi-diabetes-backend:latest) || true
+          docker rm $(docker ps -aq --filter ancestor=${{ secrets.DOCKER_USERNAME }}/diabetes-streamlit-frontend:latest) || true
+          
+          docker run -d -p 8000:8000 ${{ secrets.DOCKER_USERNAME }}/fastapi-diabetes-backend:latest
+          docker run -d -p 8501:8501 ${{ secrets.DOCKER_USERNAME }}/diabetes-streamlit-frontend:latest
         EOF
