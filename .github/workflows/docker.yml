@@ -1,4 +1,4 @@
-name: Build, Push and Deploy to EC2
+name: Build, Push, and Deploy to EC2
 
 on:
   push:
@@ -21,19 +21,17 @@ jobs:
         docker build -t zikaelson/fastapi-diabetes-backend:latest ./backend
         docker push zikaelson/fastapi-diabetes-backend:latest
 
-    - name: 🐳 Build and Push Frontends
+    - name: 🐳 Build and Push Frontend
       run: |
         docker build -t zikaelson/diabetes-streamlit-frontend:latest ./frontend
         docker push zikaelson/diabetes-streamlit-frontend:latest
 
     - name: 📡 Connect to EC2 and Deploy
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.EC2_PUBLIC_IP }}
-        username: ${{ secrets.EC2_USERNAME }}
-        key: ${{ secrets.EC2_PRIVATE_KEY }}
-        port: 22
-        script: |
+      run: |
+        echo "${{ secrets.EC2_PRIVATE_KEY }}" > private_key.pem
+        chmod 600 private_key.pem
+        ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
+          echo "✅ Connected to EC2!"
           docker pull zikaelson/fastapi-diabetes-backend:latest
           docker pull zikaelson/diabetes-streamlit-frontend:latest
 
@@ -45,3 +43,5 @@ jobs:
 
           docker run -d -p 8000:8000 zikaelson/fastapi-diabetes-backend:latest
           docker run -d -p 8501:8501 zikaelson/diabetes-streamlit-frontend:latest
+          echo "✅ New containers deployed!"
+        EOF
