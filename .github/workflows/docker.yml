@@ -1,4 +1,4 @@
-name: Build, Push, and Deploy to EC2
+name: Build, Push and Deploy to EC2
 
 on:
   push:
@@ -26,22 +26,26 @@ jobs:
         docker build -t zikaelson/diabetes-streamlit-frontend:latest ./frontend
         docker push zikaelson/diabetes-streamlit-frontend:latest
 
+    - name: 📜 Create PEM file
+      run: |
+        echo "${{ secrets.EC2_PRIVATE_KEY }}" > my-key.pem
+        chmod 400 my-key.pem
+
     - name: 📡 Connect to EC2 and Deploy
       run: |
-        echo "${{ secrets.EC2_PRIVATE_KEY }}" > private_key.pem
-        chmod 600 private_key.pem
-        ssh -o StrictHostKeyChecking=no -i private_key.pem ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
-          echo "✅ Connected to EC2!"
+        ssh -o StrictHostKeyChecking=no -i my-key.pem ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
           docker pull zikaelson/fastapi-diabetes-backend:latest
           docker pull zikaelson/diabetes-streamlit-frontend:latest
 
+          # Stop old containers (ignore errors if not running)
           docker stop $(docker ps -q --filter ancestor=zikaelson/fastapi-diabetes-backend:latest) || true
           docker stop $(docker ps -q --filter ancestor=zikaelson/diabetes-streamlit-frontend:latest) || true
 
+          # Remove old containers
           docker rm $(docker ps -aq --filter ancestor=zikaelson/fastapi-diabetes-backend:latest) || true
           docker rm $(docker ps -aq --filter ancestor=zikaelson/diabetes-streamlit-frontend:latest) || true
 
+          # Run new containers
           docker run -d -p 8000:8000 zikaelson/fastapi-diabetes-backend:latest
           docker run -d -p 8501:8501 zikaelson/diabetes-streamlit-frontend:latest
-          echo "✅ New containers deployed!"
         EOF
